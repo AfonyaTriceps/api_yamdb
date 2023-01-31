@@ -18,11 +18,11 @@ class User(AbstractUser):
         validators=(RegexValidator(r'^[\w.@+-]+\Z', message='Недопустимые символы'),),
         verbose_name='Имя пользователя (nickname)',
         max_length=150,
-        unique=True,
+        unique=False,
     )
     email = models.EmailField(
         verbose_name='Адрес электронной почты',
-        unique=True,
+        unique=False,
         max_length=254,
     )
     role = models.CharField(

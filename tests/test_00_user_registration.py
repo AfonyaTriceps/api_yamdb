@@ -339,6 +339,7 @@ class Test00UserRegistration:
             'username': 'valid_username_1'
         }
         response = client.post(self.url_signup, data=valid_data)
+        print(response.content)
         assert response.status_code == HTTPStatus.OK, (
             'Проверьте, что POST-запрос с корректными данными, отправленный '
             f'на эндпоинт `{self.url_signup}`, возвращает ответ со статусом '
@@ -346,6 +347,7 @@ class Test00UserRegistration:
         )
 
         response = client.post(self.url_signup, data=valid_data)
+        print(response.content)
         assert response.status_code == HTTPStatus.OK, (
             f'Проверьте, что повторный POST-запрос к `{self.url_signup}` с '
             'данными зарегистрированного пользователя возвращает ответ со '

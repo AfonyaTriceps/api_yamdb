@@ -25,6 +25,7 @@ from api.serializers import (
     TitleReadSerializer,
     TitleWriteSerializer,
     TokenSerializer,
+    NotAdminSerializer,
     UserEditSerializer,
     UserSerializer,
 )
@@ -50,6 +51,37 @@ def register(request):
     )
 
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def post(self, request):
+    user = User.objects.filter(
+        username=request.data.get('username'),
+        email=request.data.get('email')
+    ).first()
+    if user:
+        self.send_mail(user)
+        return Response('Already done', status=status.HTTP_200_OK)
+    serializer = RegisterDataSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    user = serializer.save()
+    self.send_mail(user)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def create(self, request, *args, **kwargs):
+    serializer = self.get_serializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    self.perform_create(serializer)
+    headers = self.get_success_headers(serializer.data)
+    return Response(
+        serializer.data,
+        status=status.HTTP_200_OK,
+        headers=headers
+    )
 
 
 @api_view(['POST'])
@@ -90,20 +122,28 @@ class UserViewSet(viewsets.ModelViewSet):
         detail=False,
         url_path='me',
         permission_classes=(permissions.IsAuthenticated,),
-        serializer_class=UserEditSerializer,
+
     )
     def users_own_profile(self, request):
+        serializer = UserSerializer
         user = request.user
         if request.method == 'GET':
             serializer = self.get_serializer(user)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         if request.method == 'PATCH':
-            serializer = self.get_serializer(
-                user,
-                data=request.data,
-                partial=True,
-            )
+            if user.is_admin:
+                serializer = self.get_serializer(
+                    user,
+                    data=request.data,
+                    partial=True,
+                )
+            else:
+                serializer = NotAdminSerializer(
+                    user,
+                    data=request.data,
+                    partial=True
+                )
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)

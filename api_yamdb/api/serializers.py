@@ -43,28 +43,65 @@ class UserEditSerializer(serializers.ModelSerializer):
 
 
 class RegisterDataSerializer(serializers.ModelSerializer):
-    username = serializers.RegexField(
-        validators=[UniqueValidator(queryset=User.objects.all())],
+    """Сериализация регистрации пользователя и создания нового."""
+    username = serializers.SlugField(
         max_length=150,
-        regex=r'^[\w.@+-]+\Z',
+        required=True,
+        validators=[
+            UniqueValidator(queryset=User.objects.all())
+        ],
     )
     email = serializers.EmailField(
-        validators=[UniqueValidator(queryset=User.objects.all())],
         max_length=254,
+        required=True,
+        validators=[
+            UniqueValidator(queryset=User.objects.all())
+        ],
     )
+
     class Meta:
         model = User
-        fields = ('username', 'email')
+        fields = ('email', 'username')
 
-    def validate_username(self, value):
-        if value.lower() == 'me':
-            raise serializers.ValidationError('Недопустимое имя пользователя')
-        return value
+    def validate(self, data):
+        if User.objects.filter(
+                username=data['username'],
+                email=data['email']).exists():
+            return data
+        if User.objects.filter(username=data['username']).exists():
+            raise serializers.ValidationError(
+                'Пользователь с таким именем существует.'
+            )
+        if User.objects.filter(email=data['email']).exists():
+            raise serializers.ValidationError(
+                'Пользователь с таким email существует.'
+            )
+        if data['username'] == 'me':
+            raise serializers.ValidationError(
+                'Использовать имя "me" в качестве username запрещено.'
+            )
+        return data
+
+    def create(self, validated_data):
+        user = User.objects.create_user(
+            email=validated_data['email'],
+            username=validated_data['username']
+        )
+        return user
 
 
 class TokenSerializer(serializers.Serializer):
     username = serializers.CharField()
     confirmation_code = serializers.CharField()
+
+
+class NotAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'username', 'email', 'first_name',
+            'last_name', 'bio', 'role')
+        read_only_fields = ('role',)
 
 
 class CategorySerializer(serializers.ModelSerializer):
