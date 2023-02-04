@@ -1,8 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
+
 class User(AbstractUser):
-    
+
     class Roles(models.TextChoices):
         ADMIN = 'admin'
         MODERATOR = 'moderator'
@@ -14,7 +15,7 @@ class User(AbstractUser):
     email = models.EmailField(
         db_index=True,
         unique=True,
-        max_length=254, #странное требование теста
+        max_length=254,  # странное требование теста
         verbose_name='Email',
         help_text='Укажите email пользователя',
     )
@@ -45,7 +46,7 @@ class User(AbstractUser):
 
     @property
     def is_admin(self):
-        return self.is_staff or self.role == self.Roles.ADMIN    
+        return self.is_staff or self.role == self.Roles.ADMIN
 
     def __str__(self):
         return self.email
@@ -53,4 +54,3 @@ class User(AbstractUser):
     @property
     def is_moderator(self):
         return self.role == self.Roles.MODERATOR
-
